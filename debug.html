@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Devices</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .device-connected { border-left: 4px solid #28a745; }
+        .device-disconnected { border-left: 4px solid #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1>Debug Device Display</h1>
+        
+        <button id="scan-btn" class="btn btn-primary mb-3">Scan Devices</button>
+        <button id="clear-btn" class="btn btn-secondary mb-3">Clear</button>
+        
+        <div id="log" class="mb-3"></div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Devices Container</h5>
+            </div>
+            <div class="card-body">
+                <div id="devices-container">
+                    <div class="text-center py-4">
+                        <p class="text-muted">Click scan to find devices</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const devices = new Map();
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+        }
+        
+        function updateDevicesDisplay() {
+            const container = document.getElementById('devices-container');
+            log(`updateDevicesDisplay called, devices.size: ${devices.size}`);
+            
+            if (devices.size === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-muted">No devices found. Click "Scan" to discover AirPlay devices.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const devicesHtml = Array.from(devices.values()).map(device => `
+                <div class="card mb-2 ${device.is_active ? 'device-connected' : 'device-disconnected'}">
+                    <div class="card-body py-2">
+                        <div class="row">
+                            <div class="col-8">
+                                <div class="fw-bold">${device.name}</div>
+                                <div class="small text-muted">${device.address}</div>
+                            </div>
+                            <div class="col-4">
+                                <span class="badge ${device.is_active ? 'bg-success' : 'bg-danger'}">
+                                    ${device.is_active ? 'Connected' : 'Disconnected'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = devicesHtml;
+            log(`Rendered ${devices.size} devices`);
+        }
+        
+        document.getElementById('scan-btn').addEventListener('click', async () => {
+            log('Starting scan...');
+            try {
+                const response = await fetch('/api/scan-devices', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`Found ${data.devices.length} devices`);
+                    
+                    // Clear and populate devices
+                    devices.clear();
+                    data.devices.forEach(device => {
+                        log(`Adding device: ${device.name} (${device.device_id})`);
+                        devices.set(device.device_id, device);
+                    });
+                    
+                    updateDevicesDisplay();
+                } else {
+                    log(`Scan failed: ${data.error}`);
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        });
+        
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            devices.clear();
+            document.getElementById('log').innerHTML = '';
+            updateDevicesDisplay();
+        });
+    </script>
+</body>
+</html>

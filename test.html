@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+</head>
+<body>
+    <h1>Device Scan Test</h1>
+    <button id="test-scan">Test Scan</button>
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('test-scan').addEventListener('click', async () => {
+            console.log('Starting scan test...');
+            try {
+                const response = await fetch('/api/scan-devices', { method: 'POST' });
+                const data = await response.json();
+                console.log('Scan response:', data);
+                
+                document.getElementById('result').innerHTML = `
+                    <h3>Result:</h3>
+                    <p>Success: ${data.success}</p>
+                    <p>Device count: ${data.devices ? data.devices.length : 0}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
