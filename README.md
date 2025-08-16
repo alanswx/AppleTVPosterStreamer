@@ -172,6 +172,3 @@ The modular architecture makes it easy to extend:
 - **UI enhancements**: Modify `templates/index.html` and `static/js/app.js`
 - **Streaming protocols**: Extend `config.py` and add protocol handlers
 
-## License
-
-MIT License - feel free to use and modify for your needs.
